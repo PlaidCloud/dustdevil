@@ -37,7 +37,7 @@ Unit testing is in development.  Current tests are localized to each class.
 * Michael Rea
 * Dan Hummon
 * Brian McFadden
-* Milan Cermak (Original session.py fork a fork of Tornado)
+* Milan Cermak (Original session.py for a fork of Tornado)
 
 
 ## License
