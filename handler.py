@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import session
+from tornado import database
 
 __author__ = "Paul Morel"
 __copyright__ = "Copyright 2010 Tartan Solutions, Inc"
@@ -11,59 +12,87 @@ __maintainer__ = "Paul Morel"
 __email__ = "paul.morel@tartansolutions.com"
 __status__ = "Alpha"
 
-def create_session(session_id, settings, ip_address, user_agent):
-    """Creates a session handler connection to the persistent storage container
-    Current support for: MySQL, Memcached, MongoDB, Redis, Directory, and File sessions"""
-    #settings = self.application.settings # just a shortcut
+class Handler(object):
+    """Dust Devil Main Session Handling Class"""
     
-    url = settings.get('session_storage')
-    #session_id = self.get_secure_cookie(settings.get('session_cookie_name', 'session_id'))
-    kw = {'security_model': settings.get('session_security_model', []),
-          'duration': settings.get('session_age', 900),
-          'ip_address': ip_address,
-          'user_agent': user_agent,
-          'regeneration_interval': settings.get('session_regeneration_interval', 240)
-          }
-    new_session = None
-    old_session = None
+    def __init__(self, settings):
+        
+        self.__kw = {'security_model': settings.get('session_security_model', []),
+              'duration': settings.get('session_age', 900),
+              'regeneration_interval': settings.get('session_regeneration_interval', 240),
+              'catalog': settings.get('session_catalog','tornado_sessions'),
+              'cookie_name': settings.get('session_cookie_name', 'session_id')
+              }
+        url = settings.get('session_storage','')
+        
+        if url.startswith('mysql'):
+            self.__container = session.MySQLSession
+            
+            u, p, h, d = self.__container._parse_connection_details(url)
+            self.__database = database.Connection(h, d, user=u, password=p)
+            
+            if not self.__database.get("""show tables like 'tornado_sessions'"""):
+                self.__database.execute( # create table if it doesn't exist
+                    """create table tornado_sessions (
+                    session_id varchar(64) not null primary key,
+                    data longtext,
+                    expires integer,
+                    ip_address varchar(46),
+                    user_agent varchar(255)
+                    );""")
+                    
+        elif url.startswith('postgresql'):
+            raise NotImplementedError
+        elif url.startswith('sqlite'):
+            raise NotImplementedError
+        elif url.startswith('memcached'):
+            self.__container = session.MemcachedSession
+            self.__database = None #TODO - Figure out how to open a memcached session
+        elif url.startswith('mongodb'):
+            self.__container = session.MongoDBSession
+            self.__database = None #TODO - Figure out how to open a mongodb session
+        elif url.startswith('redis'):
+            self.__container = session.RedisSession
+            self.__database = None #TODO - Figure out how to open a redis session
+        elif url.startswith('dir'):
+            self.__container = session.DirSession
+            self.__database = container_url[6:]
+        elif url.startswith('file'):
+            self.__container = session.FileSession
+            self.__database = container_url[7:]
+        else:
+            return None
+            
+    def create_session(self, tornado_web):
+        """Creates a session handler connection to the persistent storage container
+        Current support for: MySQL, Memcached, MongoDB, Redis, Directory, and File sessions"""
+        #settings = self.application.settings # just a shortcut
+        
+        new_session = None
+        old_session = None
+        
+        session_id = tornado_web.get_secure_cookie(self.__kw['cookie_name'])
+        ip_address = tornado_web.request.remote_ip
+        user_agent = tornado_web.request.headers.get('User-Agent')
+        
+        kw = {'security_model': self.__kw['security_model'],
+              'duration': self.__kw['duration'],
+              'ip_address': ip_address,
+              'user_agent': user_agent,
+              'tornado_web': tornado_web,
+              'regeneration_interval': self.__kw['regeneration_interval'],
+              'catalog': self.__kw['catalog'],
+              'cookie_name': self.__kw['cookie_name']
+              }
 
-    if url.startswith('mysql'):
-        old_session = session.MySQLSession.load(session_id, settings['_db'])
+        old_session = self.__container.load(session_id, self.__database, **kw)
+
         if old_session is None or old_session._is_expired(): # create a new session
-            new_session = session.MySQLSession(settings['_db'], **kw)
-    elif url.startswith('postgresql'):
-        raise NotImplementedError
-    elif url.startswith('sqlite'):
-        raise NotImplementedError
-    elif url.startswith('memcached'):
-        old_session = session.MemcachedSession.load(session_id, settings['_db'])
-        if old_session is None or old_session._is_expired(): # create new session
-            new_session = session.MemcachedSession(settings['_db'], **kw)
-    elif url.startswith('mongodb'):
-        old_session = session.MongoDBSession.load(session_id, settings['_db'])
-        if old_session is None or old_session._is_expired(): # create new session
-            new_session = session.MongoDBSession(settings['_db'], **kw)
-    elif url.startswith('redis'):
-        old_session = session.RedisSession.load(session_id, settings['_db'])
-        if old_session is None or old_session._is_expired(): # create new session
-            new_session = session.RedisSession(settings['_db'], **kw)
-    elif url.startswith('dir'):
-        dir_path = url[6:]
-        old_session = session.DirSession.load(session_id, dir_path)
-        if old_session is None or old_session._is_expired(): # create new session
-            new_session = session.DirSession(dir_path, **kw)
-    elif url.startswith('file'):
-        file_path = url[7:]
-        old_session = session.FileSession.load(session_id, file_path)
-        if old_session is None or old_session._is_expired(): # create new session
-            new_session = session.FileSession(file_path, **kw)
-    else:
-        return None
+            new_session = self.__container(self.__database, **kw)
 
-    if old_session is not None:
-        if old_session._should_regenerate():
-            old_session.refresh(new_session_id=True)
-            # TODO: security checks
-        return old_session
+        if old_session is not None:
+            if old_session._should_regenerate():
+                old_session.refresh(new_session_id=True)
+            return old_session
 
-    return new_session
+        return new_session

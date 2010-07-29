@@ -153,8 +153,9 @@ class BaseSession(collections.MutableMapping):
     and define save(), load() and delete(). For inspiration, check out any
     of the already available classes and documentation to aformentioned functions."""
     def __init__(self, session_id=None, data=None, security_model=[], expires=None,
-                 duration=None, ip_address=None, user_agent=None,
-                 regeneration_interval=None, next_regeneration=None, **kwargs):
+                 duration=None, ip_address=None, user_agent=None, catalog=None,
+                 regeneration_interval=None, next_regeneration=None, tornado_web=None, 
+                 cookie_name=None, **kwargs):
         # if session_id is True, we're loading a previously initialized session
         if session_id:
             self.session_id = session_id
@@ -175,6 +176,9 @@ class BaseSession(collections.MutableMapping):
         self.regeneration_interval = regeneration_interval
         self.next_regeneration = next_regeneration or self._next_regeneration_at()
         self._delete_cookie = False
+        self._catalog = catalog
+        self._tornado_web = tornado_web
+        self._cookie_name = cookie_name
 
     def __repr__(self):
         return '<session id: %s data: %s>' % (self.session_id, self.data)
@@ -278,7 +282,18 @@ class BaseSession(collections.MutableMapping):
         if necessary (self.dirty == True). On successful save set
         dirty to False."""
         pass
-
+        
+    def finish(self):
+        if self._delete_cookie:
+            self._tornado_web.clear_cookie(self._cookie_name)
+        else:
+            self.refresh() # advance expiry time and save session
+            self._tornado_web.set_secure_cookie(self._cookie_name,
+                                   self.session_id,
+                                   #expires_days=None,
+                                   #expires=my_container.session.expires,
+                                   path='/')
+        
     @staticmethod
     def load(session_id, location):
         """Load the stored session from storage backend or return
@@ -527,15 +542,6 @@ class MySQLSession(BaseSession):
         "update query."""
         if not self.dirty:
             return
-        if not self.connection.get("""show tables like 'tornado_sessions'"""):
-            self.connection.execute( # create table if it doesn't exist
-                """create table tornado_sessions (
-                session_id varchar(64) not null primary key,
-                data longtext,
-                expires integer,
-                ip_address varchar(46),
-                user_agent varchar(255)
-                );""")
 
         self.connection.execute( # MySQL's upsert
             """insert into tornado_sessions
@@ -546,19 +552,24 @@ class MySQLSession(BaseSession):
             ip_address=values(ip_address), user_agent=values(user_agent);""",
             self.session_id, self.serialize(), int(time.mktime(self.expires.timetuple())),
             self.ip_address, self.user_agent)
+            
+        print "Session ID sent in the SAVE QUERY = ", self.session_id
         self.dirty = False
 
     @staticmethod
-    def load(session_id, connection):
+    def load(session_id, connection, **kwargs):
         """Load the stored session."""
         try:
             data = connection.get("""
             select session_id, data, expires, ip_address, user_agent
             from tornado_sessions where session_id = %s;""",  session_id)
             if data:
-                kwargs = MySQLSession.deserialize(data['data'])
-                return MySQLSession(connection, **kwargs)
-            return None
+                stored_kwargs = MySQLSession.deserialize(data['data'])
+                kwargs.update(stored_kwargs)
+                session_object = MySQLSession(connection, **kwargs)
+                #session_object._tornado_web = tornado_web
+            #print "Data from query", data
+            return session_object
         except:
             return None
 
