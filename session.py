@@ -553,7 +553,7 @@ class MySQLSession(BaseSession):
             self.session_id, self.serialize(), int(time.mktime(self.expires.timetuple())),
             self.ip_address, self.user_agent)
             
-        print "Session ID sent in the SAVE QUERY = ", self.session_id
+        #print "Session ID sent in the SAVE QUERY = ", self.session_id
         self.dirty = False
 
     @staticmethod
