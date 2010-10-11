@@ -324,6 +324,12 @@ class BaseSession(collections.MutableMapping):
     @staticmethod
     def deserialize(datastring):
         return pickle.loads(base64.decodestring(datastring))
+    
+    def dump_dict(self):
+        return self.data.copy()
+    
+    def load_dict(self, data_dict):
+        self.data = data_dict.copy()
 
 
 class FileSession(BaseSession):
