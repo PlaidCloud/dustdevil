@@ -326,10 +326,19 @@ class BaseSession(collections.MutableMapping):
         return pickle.loads(base64.decodestring(datastring))
     
     def dump_dict(self):
+        """Returns a copy, not the reference, of this session's data."""
+        
         return self.data.copy()
     
     def load_dict(self, data_dict):
+        """Sets this session's data to be a copy of the given dictionary."""
+        
         self.data = data_dict.copy()
+    
+    def update_dict(self, data_dict):
+        """Update's this sessions dictionary from the given one."""
+        
+        self.data.update(data_dict)
 
 
 class FileSession(BaseSession):
