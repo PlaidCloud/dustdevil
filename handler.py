@@ -21,7 +21,8 @@ class Handler(object):
               'duration': settings.get('session_age', 900),
               'regeneration_interval': settings.get('session_regeneration_interval', 240),
               'catalog': settings.get('session_catalog','tornado_sessions'),
-              'cookie_name': settings.get('session_cookie_name', 'session_id')
+              'cookie_name': settings.get('session_cookie_name', 'session_id'),
+              'field_store': settings.get('session_field_store')
               }
         url = settings.get('session_storage','')
         
@@ -82,7 +83,8 @@ class Handler(object):
               'tornado_web': tornado_web,
               'regeneration_interval': self.__kw['regeneration_interval'],
               'catalog': self.__kw['catalog'],
-              'cookie_name': self.__kw['cookie_name']
+              'cookie_name': self.__kw['cookie_name'],
+              'field_store': self.__kw['field_store']
               }
 
         old_session = self.__container.load(session_id, self.__database, **kw)

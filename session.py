@@ -155,7 +155,7 @@ class BaseSession(collections.MutableMapping):
     def __init__(self, session_id=None, data=None, security_model=[], expires=None,
                  duration=None, ip_address=None, user_agent=None, catalog=None,
                  regeneration_interval=None, next_regeneration=None, tornado_web=None, 
-                 cookie_name=None, **kwargs):
+                 cookie_name=None, field_store=None, **kwargs):
         # if session_id is True, we're loading a previously initialized session
         if session_id:
             self.session_id = session_id
@@ -179,6 +179,7 @@ class BaseSession(collections.MutableMapping):
         self._catalog = catalog
         self._tornado_web = tornado_web
         self._cookie_name = cookie_name
+        self._field_store = field_store
 
     def __repr__(self):
         return '<session id: %s data: %s>' % (self.session_id, self.data)
@@ -557,16 +558,55 @@ class MySQLSession(BaseSession):
         "update query."""
         if not self.dirty:
             return
-
-        self.connection.execute( # MySQL's upsert
-            """insert into tornado_sessions
-            (session_id, data, expires, ip_address, user_agent) values
-            (%s, %s, %s, %s, %s)
-            on duplicate key update
-            session_id=values(session_id), data=values(data), expires=values(expires),
-            ip_address=values(ip_address), user_agent=values(user_agent);""",
-            self.session_id, self.serialize(), int(time.mktime(self.expires.timetuple())),
-            self.ip_address, self.user_agent)
+        
+        base_session_fields = {
+            'session_id': self.session_id, 
+            'data': self.serialize(), 
+            'expires': int(time.mktime(self.expires.timetuple())), 
+            'ip_address': self.ip_address, 
+            'user_agent': self.user_agent
+        }
+        
+        #This will take the data stored in a session and put it in a specified field
+        if self._field_store is not None:
+            for f in self._field_store:
+                if self._field_store[f] in self.data:
+                    base_session_fields[f] = self.data[self._field_store[f]]
+                    
+        #Build Query String
+        query_fields = []
+        value_fields = []
+        key_fields = []
+        values = []
+        
+        count = 0
+        for b in base_session_fields:
+            count += 1
+            query_fields.append(b)
+            value_fields.append('%s')
+            key_string = "".join((b, '=values(', b, ')'))
+            key_fields.append(key_string)
+            values.append(base_session_fields[b])
+            count += 1
+            
+        query_line_1 = "".join(("INSERT INTO tornado_sessions (", ", ".join(query_fields), ") VALUES "))
+        query_line_2 = "".join(("(", ", ".join(value_fields), ")"))
+        query_line_3 = " on duplicate key update "
+        query_line_4 = ", ".join(key_fields)
+        
+        query = "".join((query_line_1, "".join(("(", ", ".join(value_fields), ")")), query_line_3, query_line_4, ";"))
+        
+        self.connection.execute(query, *values)
+        
+        #self.connection.execute( # MySQL's upsert
+        #    """insert into tornado_sessions
+        #    (session_id, data, expires, ip_address, user_agent) values
+        #    (%s, %s, %s, %s, %s)
+        #    on duplicate key update
+        #    session_id=values(session_id), data=values(data), expires=values(expires),
+        #    ip_address=values(ip_address), user_agent=values(user_agent);""",
+        #    self.session_id, self.serialize(), int(time.mktime(self.expires.timetuple())),
+        #    self.ip_address, self.user_agent)
             
         #print "Session ID sent in the SAVE QUERY = ", self.session_id
         self.dirty = False
