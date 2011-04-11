@@ -64,7 +64,7 @@ class Handler(object):
         else:
             return None
             
-    def create_session(self, tornado_web):
+    def create_session(self, tornado_web, session_id=None):
         """Creates a session handler connection to the persistent storage container
         Current support for: MySQL, Memcached, MongoDB, Redis, Directory, and File sessions"""
         #settings = self.application.settings # just a shortcut
@@ -72,7 +72,7 @@ class Handler(object):
         new_session = None
         old_session = None
         
-        session_id = tornado_web.get_secure_cookie(self.__kw['cookie_name'])
+        session_id = session_id or tornado_web.get_secure_cookie(self.__kw['cookie_name'])
         ip_address = tornado_web.request.remote_ip
         user_agent = tornado_web.request.headers.get('User-Agent')
         
