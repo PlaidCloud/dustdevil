@@ -535,7 +535,7 @@ class MySQLSession(BaseSession):
         # mysql://username:password[@hostname[:port]]/db
 
         if details.find('@') != -1:
-            match = re.match('mysql://(\w+):(.*?)@([\w|\.]+)(?::(\d+))?/(\S+)', details)
+            match = re.match('mysql://(\w+):(.*?)@([\w-|\.]+)(?::(\d+))?/(\S+)', details)
             username = match.group(1)
             password = match.group(2)
             hostname = match.group(3)
