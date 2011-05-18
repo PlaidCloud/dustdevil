@@ -293,7 +293,8 @@ class BaseSession(collections.MutableMapping):
                                    self.session_id,
                                    #expires_days=None,
                                    #expires=my_container.session.expires,
-                                   path='/')
+                                   path='/',
+                                   secure=True)
         
     @staticmethod
     def load(session_id, location):
