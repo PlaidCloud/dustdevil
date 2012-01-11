@@ -289,12 +289,12 @@ class BaseSession(collections.MutableMapping):
             self._tornado_web.clear_cookie(self._cookie_name)
         else:
             self.refresh() # advance expiry time and save session
-            self._tornado_web.set_secure_cookie(self._cookie_name,
-                                   self.session_id,
-                                   #expires_days=None,
-                                   #expires=my_container.session.expires,
-                                   path='/',
-                                   secure=True)
+            #self._tornado_web.set_secure_cookie(self._cookie_name,
+            #                       self.session_id,
+            #                       #expires_days=None,
+            #                       #expires=my_container.session.expires,
+            #                       path='/',
+            #                       secure=True)
         
     @staticmethod
     def load(session_id, location):
