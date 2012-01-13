@@ -266,6 +266,7 @@ class BaseSession(collections.MutableMapping):
         
         If new_session_id is True, a new session identifier will be generated.
         This should be used e.g. on user authentication for security reasons."""
+        print("new_session_id: " + str(new_session_id))
         if duration:
             self.duration = duration
             self.expires = self._expires_at()
@@ -631,6 +632,8 @@ class MySQLSession(BaseSession):
 
     def delete(self):
         """Remove session data from the database."""
+        print("Delete: getting here.")
+        print(self.session_id)
         self.connection.execute("""
         delete from tornado_sessions where session_id = %s;""", self.session_id)
 
