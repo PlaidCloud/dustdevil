@@ -230,6 +230,8 @@ class BaseSession(collections.MutableMapping):
 
     def _should_regenerate(self):
         """Determine if the session_id should be regenerated."""
+        if datetime.datetime.now() > self.next_regeneration:
+            print "REGENERATING SESSIONID NOW"
         return datetime.datetime.now() > self.next_regeneration
 
     def _next_regeneration_at(self):
