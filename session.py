@@ -683,11 +683,12 @@ try:
             the data is actually updated on the HDD."""
             if not self.dirty:
                 return
+            # expiration should also be redis's job.
             value = ':'.join((self.serialize(),
-                             str(int(time.mktime(self.expires.timetuple()))),
+                             #str(int(time.mktime(self.expires.timetuple()))),
                              self.ip_address,
                              self.user_agent))
-            self.connection.set(self.session_id, value)
+            self.connection.setex(self.session_id, self.duration.seconds, value)
             #I don't know why this was here. It should be redis's job to save itself.
             #Maybe an old version of redis didn't have timed disk backups?
             #try:
@@ -699,7 +700,6 @@ try:
         @staticmethod
         def load(session_id, connection, **kwargs):
             """Load the stored session."""
-            print "SESSION_ID: " + str(session_id)
             if connection.exists(session_id) == 1:
                 try:
                     data = connection.get(session_id)
@@ -707,6 +707,7 @@ try:
                         stored_kwargs = RedisSession.deserialize(data.split(':', 1)[0])
                         kwargs.update(stored_kwargs)
                         session_object = RedisSession(connection, **kwargs)
+                        connection.expire(session_id, session_object.duration.seconds)
                     return session_object
                 except:
                     return None
@@ -721,13 +722,13 @@ try:
             #except redis.ResponseError:
                 #pass
 
-        @staticmethod
-        def delete_expired(connection):
-            for key in connection.keys('*'):
-                value = connection.get(key)
-                expires = value.split(':', 2)[1]
-                if int(expires) < int(time.time()):
-                    connection.delete(key)
+        #@staticmethod
+        #def delete_expired(connection):
+            #for key in connection.keys('*'):
+                #value = connection.get(key)
+                #expires = value.split(':', 2)[1]
+                #if int(expires) < int(time.time()):
+                    #connection.delete(key)
 
 except ImportError:
     pass

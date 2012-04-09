@@ -100,6 +100,8 @@ class Handler(object):
         session_id = session_id or tornado_web.get_secure_cookie(self.__kw['cookie_name'])
         ip_address = tornado_web.request.remote_ip
         user_agent = tornado_web.request.headers.get('User-Agent')
+
+        logger.info(" xyx duration: " + str(self.__kw['duration']))
         
         kw = {'security_model': self.__kw['security_model'],
               'duration': self.__kw['duration'],
