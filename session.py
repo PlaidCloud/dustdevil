@@ -673,7 +673,7 @@ try:
             # redis://[auth@][host[:port]][/db]
             match = re.match('redis://(?:(\S+)@)?([^\s:/]+)?(?::(\d+))?(?:/(\d+))?$', details)
             password, host, port, db = match.groups()
-            return password, host, port, db
+            return password, host, int(port), int(db)
 
         def save(self):
             """Save the current sesssion to Redis. The session_id
@@ -688,20 +688,26 @@ try:
                              self.ip_address,
                              self.user_agent))
             self.connection.set(self.session_id, value)
-            try:
-                self.connection.save(background=True)
-            except redis.ResponseError:
-                pass
+            #I don't know why this was here. It should be redis's job to save itself.
+            #Maybe an old version of redis didn't have timed disk backups?
+            #try:
+                #self.connection.save(background=True)
+            #except redis.ResponseError:
+                #pass
             self.dirty = False
 
         @staticmethod
-        def load(session_id, connection):
+        def load(session_id, connection, **kwargs):
             """Load the stored session."""
+            print "SESSION_ID: " + str(session_id)
             if connection.exists(session_id) == 1:
                 try:
                     data = connection.get(session_id)
-                    kwargs = RedisSession.deserialize(data.split(':', 1)[0])
-                    return RedisSession(connection, **kwargs)
+                    if data:
+                        stored_kwargs = RedisSession.deserialize(data.split(':', 1)[0])
+                        kwargs.update(stored_kwargs)
+                        session_object = RedisSession(connection, **kwargs)
+                    return session_object
                 except:
                     return None
             return None
@@ -710,10 +716,10 @@ try:
             """Delete the session key-value from Redis. As save(),
             delete() too calls BGSAVE."""
             self.connection.delete(self.session_id)
-            try:
-                self.connection.save(background=True)
-            except redis.ResponseError:
-                pass
+            #try:
+                #self.connection.save(background=True)
+            #except redis.ResponseError:
+                #pass
 
         @staticmethod
         def delete_expired(connection):

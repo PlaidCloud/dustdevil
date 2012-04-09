@@ -2,6 +2,14 @@
 
 import session
 from tornado import database
+try:
+    import redis
+except ImportError:
+    pass
+try:
+    from cockpit.core.utility import plogging
+except ImportError:
+    pass
 
 __author__ = "Paul Morel"
 __copyright__ = "Copyright 2010 Tartan Solutions, Inc"
@@ -16,6 +24,9 @@ class Handler(object):
     """Dust Devil Main Session Handling Class"""
     
     def __init__(self, settings):
+
+        
+        logger = plogging.get_logger_adapter(__name__, None, None)
         
         self.__kw = {'security_model': settings.get('session_security_model', []),
               'duration': settings.get('session_age', 900),
@@ -54,7 +65,17 @@ class Handler(object):
             self.__database = None #TODO - Figure out how to open a mongodb session
         elif url.startswith('redis'):
             self.__container = session.RedisSession
-            self.__database = None #TODO - Figure out how to open a redis session
+            password, host, port, db = self.__container._parse_connection_details(url)
+            logger.info(" xyx password: " + str(password))
+            logger.info(" xyx  type: " + str(type(password)))
+            logger.info(" xyx host: " + str(host))
+            logger.info(" xyx  type: " + str(type(host)))
+            logger.info(" xyx port: " + str(port))
+            logger.info(" xyx  type: " + str(type(port)))
+            logger.info(" xyx db: " + str(db))
+            logger.info(" xyx  type: " + str(type(db)))
+            self.__database = redis.StrictRedis(host=host, port=port, 
+                                                db=db, password=password)
         elif url.startswith('dir'):
             self.__container = session.DirSession
             self.__database = container_url[6:]
@@ -68,6 +89,10 @@ class Handler(object):
         """Creates a session handler connection to the persistent storage container
         Current support for: MySQL, Memcached, MongoDB, Redis, Directory, and File sessions"""
         #settings = self.application.settings # just a shortcut
+
+        logger = plogging.get_logger_adapter(__name__, None, None)
+
+        logger.info( " xyx GETTING HERE")
         
         new_session = None
         old_session = None
