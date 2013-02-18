@@ -671,7 +671,7 @@ class PostgresSession(BaseSession):
             match = re.match('postgresql://(\w+):(.*?)@([\w|\.-]+)(?::(\d+))?/(\S+)', details)
             username = match.group(1)
             password = match.group(2)
-            hostname = match.group(3)
+            hostname = match.group(3) or 'localhost'
             port = match.group(4) or '5432'
             database = match.group(5)
             host_port = hostname + ':' + port
@@ -736,6 +736,7 @@ class PostgresSession(BaseSession):
             self.connection.rollback()
             cur.execute(update_query, values)
         finally:
+            self.connection.commit()
             self.dirty = False
 
     @staticmethod
@@ -768,6 +769,7 @@ class PostgresSession(BaseSession):
 
         cur.execute("""
         delete from tornado_sessions where session_id = %s;""", (self.session_id,))
+        self.connection.commit()
 
     @staticmethod
     def delete_expired(connection):
@@ -775,6 +777,7 @@ class PostgresSession(BaseSession):
 
         cur.execute("""
         delete from tornado_sessions where expires < %s;""", (int(time.time()),))
+        self.connection.commit()
 
 
 try:
