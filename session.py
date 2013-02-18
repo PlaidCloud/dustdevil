@@ -15,7 +15,7 @@ Every session object can be handled as a dictionary:
     var = self.session[key]
 
 The session data is saved automatically for you when the request
-handler finishes. 
+handler finishes.
 
 Two utility functions, invalidate() and refresh() are available to
 every session object. Read their documentation to learn more.
@@ -133,6 +133,7 @@ __maintainer__ = "Paul Morel"
 __email__ = "paul.morel@tartansolutions.com"
 __status__ = "Stable"
 
+
 class BaseSession(collections.MutableMapping):
     """The base class for the session object. Work with the session object
     is really simple, just treat is as any other dictionary:
@@ -154,7 +155,7 @@ class BaseSession(collections.MutableMapping):
     of the already available classes and documentation to aformentioned functions."""
     def __init__(self, session_id=None, data=None, security_model=[], expires=None,
                  duration=None, ip_address=None, user_agent=None, catalog=None,
-                 regeneration_interval=None, next_regeneration=None, tornado_web=None, 
+                 regeneration_interval=None, next_regeneration=None, tornado_web=None,
                  cookie_name=None, field_store=None, **kwargs):
         # if session_id is True, we're loading a previously initialized session
         if session_id:
@@ -208,7 +209,7 @@ class BaseSession(collections.MutableMapping):
         return len(self.data.keys())
 
     def _generate_session_id(cls):
-        return os.urandom(32).encode('hex') # 256 bits of entropy
+        return os.urandom(32).encode('hex')  # 256 bits of entropy
 
     def _is_expired(self):
         """Check if the session has expired."""
@@ -220,19 +221,19 @@ class BaseSession(collections.MutableMapping):
         if isinstance(v, datetime.timedelta):
             pass
         elif isinstance(v, (int, long)):
-            self.duration =  datetime.timedelta(seconds=v)
+            self.duration = datetime.timedelta(seconds=v)
         elif isinstance(v, basestring):
             self.duration = datetime.timedelta(seconds=int(v))
         else:
-            self.duration = datetime.timedelta(seconds=900) # 15 mins
+            self.duration = datetime.timedelta(seconds=900)  # 15 mins
 
         return datetime.datetime.now() + self.duration
 
     def _should_regenerate(self):
         """Determine if the session_id should be regenerated."""
-        #if datetime.datetime.now() > self.next_regeneration:
+        # if datetime.datetime.now() > self.next_regeneration:
         #    print "REGENERATING SESSIONID NOW"
-        #return datetime.datetime.now() > self.next_regeneration
+        # return datetime.datetime.now() > self.next_regeneration
         return False  # just return False, so we never regenerate.
 
     def _next_regeneration_at(self):
@@ -250,26 +251,26 @@ class BaseSession(collections.MutableMapping):
         elif isinstance(v, basestring):
             self.regeneration_interval = datetime.timedelta(seconds=int(v))
         else:
-            self.regeneration_interval = datetime.timedelta(seconds=240) # 4 mins
+            self.regeneration_interval = datetime.timedelta(seconds=240)  # 4 mins
 
         return datetime.datetime.now() + self.regeneration_interval
 
-    def invalidate(self): 
+    def invalidate(self):
         """Destorys the session, both server-side and client-side.
         As a best practice, it should be used when the user logs out of
         the application."""
-        self.delete() # remove server-side
-        self._delete_cookie = True # remove client-side
-    
-    def refresh(self, duration=None, new_session_id=False): # the opposite of invalidate
+        self.delete()  # remove server-side
+        self._delete_cookie = True  # remove client-side
+
+    def refresh(self, duration=None, new_session_id=False):  # the opposite of invalidate
         """Prolongs the session validity. You can specify for how long passing a
         value in the duration argument (the same rules as for session_age apply).
         Be aware that henceforward this particular session may have different
-        expiry date, not respecting the global setting. 
-        
+        expiry date, not respecting the global setting.
+
         If new_session_id is True, a new session identifier will be generated.
         This should be used e.g. on user authentication for security reasons."""
-        print("new_session_id: " + str(new_session_id))
+        # print("new_session_id: " + str(new_session_id))
         if duration:
             self.duration = duration
             self.expires = self._expires_at()
@@ -279,7 +280,7 @@ class BaseSession(collections.MutableMapping):
             self.delete()
             self.session_id = self._generate_session_id()
             self.next_regeneration = self._next_regeneration_at()
-        self.dirty = True # force save
+        self.dirty = True  # force save
         self.save()
 
     def save(self):
@@ -287,19 +288,19 @@ class BaseSession(collections.MutableMapping):
         if necessary (self.dirty == True). On successful save set
         dirty to False."""
         pass
-        
+
     def finish(self):
         if self._delete_cookie:
             self._tornado_web.clear_cookie(self._cookie_name)
         else:
-            self.refresh() # advance expiry time and save session
-            #self._tornado_web.set_secure_cookie(self._cookie_name,
+            self.refresh()  # advance expiry time and save session
+            # self._tornado_web.set_secure_cookie(self._cookie_name,
             #                       self.session_id,
             #                       #expires_days=None,
             #                       #expires=my_container.session.expires,
             #                       path='/',
             #                       secure=True)
-        
+
     @staticmethod
     def load(session_id, location):
         """Load the stored session from storage backend or return
@@ -330,20 +331,20 @@ class BaseSession(collections.MutableMapping):
     @staticmethod
     def deserialize(datastring):
         return pickle.loads(base64.decodestring(datastring))
-    
+
     def dump_dict(self):
         """Returns a copy, not the reference, of this session's data."""
-        
+
         return self.data.copy()
-    
+
     def load_dict(self, data_dict):
         """Sets this session's data to be a copy of the given dictionary."""
-        
+
         self.data = data_dict.copy()
-    
+
     def update_dict(self, data_dict):
         """Update's this sessions dictionary from the given one."""
-        
+
         self.data.update(data_dict)
 
 
@@ -352,15 +353,15 @@ class FileSession(BaseSession):
     is either specified in the session_storage setting (be sure it is writable
     to the Tornado process) or a new tempfile with 'tornado_sessions_' prefix
     is created in the OS' standard location.
-    
+
     Be aware that file-based sessions can get really slow with many stored
     session as any action (save, load, delete) has to cycle through the whole
     file. """
     def __init__(self, file_path, **kwargs):
         super(FileSession, self).__init__(**kwargs)
         self.file_path = file_path
-        if not kwargs.has_key('session_id'):
-            self.save() # save only if it is a newly created session, not if loaded from storage
+        if 'session_id' not in kwargs:
+            self.save()  # save only if it is a newly created session, not if loaded from storage
 
     def save(self):
         """Save the session. To prevent data loss, we read from the original
@@ -387,7 +388,7 @@ class FileSession(BaseSession):
             else:
                 writer.writerow(line)
 
-        if not found: # not previously stored session
+        if not found:  # not previously stored session
             # column data will contain the whole object, not just the
             # data attribute
             writer.writerow({'session_id': self.session_id,
@@ -433,7 +434,7 @@ class FileSession(BaseSession):
 
         reader_file.close()
         writer_temp_file.close()
-        os.rename(writer_temp, self.file_path) # rename the temporary holder to the session file
+        os.rename(writer_temp, self.file_path)  # rename the temporary holder to the session file
 
     @staticmethod
     def delete_expired(file_path):
@@ -452,6 +453,7 @@ class FileSession(BaseSession):
         writer_temp_file.close()
         os.rename(writer_temp, file_path)
 
+
 class DirSession(BaseSession):
     """A "directory" based session storage. Every session is stored in a
     separate file, so one file represents one session. The files are
@@ -461,7 +463,7 @@ class DirSession(BaseSession):
     def __init__(self, dir_path, **kwargs):
         super(DirSession, self).__init__(**kwargs)
         self.dir_path = dir_path
-        if not kwargs.has_key('session_id'):
+        if 'session_id' not in kwargs:
             self.save()
 
     def save(self):
@@ -470,7 +472,7 @@ class DirSession(BaseSession):
         it renames it to the correct name (<session_id>.session)."""
         if not self.dirty:
             return
-        session_file = os.path.join(self.dir_path, self.session_id+'.session')
+        session_file = os.path.join(self.dir_path, self.session_id + '.session')
         # write to temp file and then rename
         temp_fd, temp_name = tempfile.mkstemp(dir=self.dir_path)
         temp_file = os.fdopen(temp_fd, 'w+b')
@@ -488,7 +490,7 @@ class DirSession(BaseSession):
     def load(session_id, directory):
         """Load session from file storage."""
         try:
-            session_file_name = os.path.join(directory, session_id+'.session')
+            session_file_name = os.path.join(directory, session_id + '.session')
             if os.path.isfile(session_file_name):
                 session_file = open(session_file_name, 'rb')
                 reader = csv.reader(session_file)
@@ -501,7 +503,7 @@ class DirSession(BaseSession):
 
     def delete(self):
         """Deletes the session file."""
-        session_file = os.path.join(self.dir_path, self.session_id+'.session')
+        session_file = os.path.join(self.dir_path, self.session_id + '.session')
         if os.path.isfile(session_file):
             os.remove(session_file)
 
@@ -532,7 +534,7 @@ class MySQLSession(BaseSession):
     def __init__(self, connection, **kwargs):
         super(MySQLSession, self).__init__(**kwargs)
         self.connection = connection
-        if not kwargs.has_key('session_id'):
+        if 'session_id' not in kwargs:
             self.save()
 
     @staticmethod
@@ -547,14 +549,14 @@ class MySQLSession(BaseSession):
             port = match.group(4) or '3306'
             database = match.group(5)
             host_port = hostname + ':' + port
-        else: # hostname and port not specified
+        else:  # hostname and port not specified
             host_port = 'localhost:3306'
             match = re.match('mysql://(\w+):(.*?)/(\S+)', details)
             username = match.group(1)
             password = match.group(2)
-            database = match.group(3)        
+            database = match.group(3)
 
-        return username, password, host_port, database
+        return username, password, hostname, database, port
 
     def save(self):
         """Store the session data to database. Session is saved only if it
@@ -563,27 +565,27 @@ class MySQLSession(BaseSession):
         "update query."""
         if not self.dirty:
             return
-        
+
         base_session_fields = {
-            'session_id': self.session_id, 
-            'data': self.serialize(), 
-            'expires': int(time.mktime(self.expires.timetuple())), 
-            'ip_address': self.ip_address, 
+            'session_id': self.session_id,
+            'data': self.serialize(),
+            'expires': int(time.mktime(self.expires.timetuple())),
+            'ip_address': self.ip_address,
             'user_agent': self.user_agent
         }
-        
-        #This will take the data stored in a session and put it in a specified field
+
+        # This will take the data stored in a session and put it in a specified field
         if self._field_store is not None:
             for f in self._field_store:
                 if self._field_store[f] in self.data:
                     base_session_fields[f] = self.data[self._field_store[f]]
-                    
-        #Build Query String
+
+        # Build Query String
         query_fields = []
         value_fields = []
         key_fields = []
         values = []
-        
+
         count = 0
         for b in base_session_fields:
             count += 1
@@ -593,17 +595,17 @@ class MySQLSession(BaseSession):
             key_fields.append(key_string)
             values.append(base_session_fields[b])
             count += 1
-            
+
         query_line_1 = "".join(("INSERT INTO tornado_sessions (", ", ".join(query_fields), ") VALUES "))
-        query_line_2 = "".join(("(", ", ".join(value_fields), ")"))
+        # query_line_2 = "".join(("(", ", ".join(value_fields), ")"))
         query_line_3 = " on duplicate key update "
         query_line_4 = ", ".join(key_fields)
-        
+
         query = "".join((query_line_1, "".join(("(", ", ".join(value_fields), ")")), query_line_3, query_line_4, ";"))
-        
+
         self.connection.execute(query, *values)
-        
-        #self.connection.execute( # MySQL's upsert
+
+        # self.connection.execute( # MySQL's upsert
         #    """insert into tornado_sessions
         #    (session_id, data, expires, ip_address, user_agent) values
         #    (%s, %s, %s, %s, %s)
@@ -612,8 +614,8 @@ class MySQLSession(BaseSession):
         #    ip_address=values(ip_address), user_agent=values(user_agent);""",
         #    self.session_id, self.serialize(), int(time.mktime(self.expires.timetuple())),
         #    self.ip_address, self.user_agent)
-            
-        #print "Session ID sent in the SAVE QUERY = ", self.session_id
+
+        # print "Session ID sent in the SAVE QUERY = ", self.session_id
         self.dirty = False
 
     @staticmethod
@@ -627,16 +629,16 @@ class MySQLSession(BaseSession):
                 stored_kwargs = MySQLSession.deserialize(data['data'])
                 kwargs.update(stored_kwargs)
                 session_object = MySQLSession(connection, **kwargs)
-                #session_object._tornado_web = tornado_web
-            #print "Data from query", data
+                # session_object._tornado_web = tornado_web
+            # print "Data from query", data
             return session_object
         except:
             return None
 
     def delete(self):
         """Remove session data from the database."""
-        print("Delete: getting here.")
-        print(self.session_id)
+        # print("Delete: getting here.")
+        # print(self.session_id)
         self.connection.execute("""
         delete from tornado_sessions where session_id = %s;""", self.session_id)
 
@@ -644,6 +646,135 @@ class MySQLSession(BaseSession):
     def delete_expired(connection):
         connection.execute("""
         delete from tornado_sessions where expires < %s;""", int(time.time()))
+
+
+class PostgresSession(BaseSession):
+    """Enables Postgres to act as a session storage engine. It uses Tornado's
+    Postgres wrapper from database.py.
+
+    The connection details are specified in the session_storage settings
+    as string postgresql://username:password[@hostname[:port]]/database. It
+    stores session data in the table tornado_sessions. If hostname or
+    port aren't specified, localhost:3306 are used as defaults. """
+
+    def __init__(self, connection, **kwargs):
+        super(PostgresSession, self).__init__(**kwargs)
+        self.connection = connection
+        if 'session_id' not in kwargs:
+            self.save()
+
+    @staticmethod
+    def _parse_connection_details(details):
+        # mysql://username:password[@hostname[:port]]/db
+
+        if details.find('@') != -1:
+            match = re.match('postgresql://(\w+):(.*?)@([\w|\.-]+)(?::(\d+))?/(\S+)', details)
+            username = match.group(1)
+            password = match.group(2)
+            hostname = match.group(3)
+            port = match.group(4) or '5432'
+            database = match.group(5)
+            host_port = hostname + ':' + port
+        else:  # hostname and port not specified
+            host_port = 'localhost:5432'
+            match = re.match('postgresql://(\w+):(.*?)/(\S+)', details)
+            username = match.group(1)
+            password = match.group(2)
+            database = match.group(3)
+
+        return username, password, hostname, database, port
+
+    def save(self):
+        """Store the session data to database. Session is saved only if it
+        is necessary. If the table 'tornado_sessions' does not exist yet,
+        create it. It uses MySQL's "non-standard insert ... on duplicate key
+        "update query."""
+        if not self.dirty:
+            return
+
+        base_session_fields = {
+            'session_id': self.session_id,
+            'data': self.serialize(),
+            'expires': int(time.mktime(self.expires.timetuple())),
+            'ip_address': self.ip_address,
+            'user_agent': self.user_agent
+        }
+
+        # This will take the data stored in a session and put it in a specified field
+        if self._field_store is not None:
+            for f in self._field_store:
+                if self._field_store[f] in self.data:
+                    base_session_fields[f] = self.data[self._field_store[f]]
+
+        # Build Query String
+        query_fields = []
+        value_fields = []
+        update_fields = []
+        values = []
+
+        for b in base_session_fields:
+            query_fields.append(b)
+            value_fields.append('%s')
+            update_fields.append('{0}={1}'.format(b, '%s'))
+            values.append(base_session_fields[b])
+
+        # TODO - Need some Postgres expertise on replicating UPSERT functionality
+        #        For now, performing key violation handling in python.
+
+        table_name = 'tornado_sessions'
+        fields_string = ", ".join(query_fields)
+        values_string = ", ".join(value_fields)
+        updates_string = ", ".join(update_fields)
+
+        insert_query = "INSERT INTO {0} ({1}) VALUES ({2});".format(table_name, fields_string, values_string)
+        update_query = "UPDATE {0} SET {1} WHERE {0}.session_id='{2}';".format(table_name, updates_string, self.session_id)
+        cur = self.connection.cursor()
+
+        try:
+            cur.execute(insert_query, values)
+        except:
+            self.connection.rollback()
+            cur.execute(update_query, values)
+        finally:
+            self.dirty = False
+
+    @staticmethod
+    def load(session_id, connection, **kwargs):
+        """Load the stored session."""
+        try:
+            query = """
+            select session_id, data, expires, ip_address, user_agent
+            from tornado_sessions where session_id = %s;"""
+
+            cur = self.connection.cursor()
+            cur.execute(query, session_id)
+
+            data = cur.fetchone()
+            if data:
+                stored_kwargs = PostgresSession.deserialize(data['data'])
+                kwargs.update(stored_kwargs)
+                session_object = PostgresSession(connection, **kwargs)
+                # session_object._tornado_web = tornado_web
+            # print "Data from query", data
+            return session_object
+        except:
+            return None
+
+    def delete(self):
+        """Remove session data from the database."""
+        # print("Delete: getting here.")
+        # print(self.session_id)
+        cur = self.connection.cursor()
+
+        cur.execute("""
+        delete from tornado_sessions where session_id = %s;""", (self.session_id,))
+
+    @staticmethod
+    def delete_expired(connection):
+        cur = self.connection.cursor()
+
+        cur.execute("""
+        delete from tornado_sessions where expires < %s;""", (int(time.time()),))
 
 
 try:
@@ -665,7 +796,7 @@ try:
         def __init__(self, connection, **kwargs):
             super(RedisSession, self).__init__(**kwargs)
             self.connection = connection
-            if not kwargs.has_key('session_id'):
+            if 'session_id' not in kwargs:
                 self.save()
 
         @staticmethod
@@ -685,16 +816,16 @@ try:
                 return
             # expiration should also be redis's job.
             value = ':'.join((self.serialize(),
-                             #str(int(time.mktime(self.expires.timetuple()))),
+                             # str(int(time.mktime(self.expires.timetuple()))),
                              self.ip_address,
                              self.user_agent))
             self.connection.setex(self.session_id, self.duration.seconds, value)
-            #I don't know why this was here. It should be redis's job to save itself.
-            #Maybe an old version of redis didn't have timed disk backups?
-            #try:
-                #self.connection.save(background=True)
-            #except redis.ResponseError:
-                #pass
+            # I don't know why this was here. It should be redis's job to save itself.
+            # Maybe an old version of redis didn't have timed disk backups?
+            # try:
+                # self.connection.save(background=True)
+            # except redis.ResponseError:
+                # pass
             self.dirty = False
 
         @staticmethod
@@ -717,18 +848,18 @@ try:
             """Delete the session key-value from Redis. As save(),
             delete() too calls BGSAVE."""
             self.connection.delete(self.session_id)
-            #try:
-                #self.connection.save(background=True)
-            #except redis.ResponseError:
-                #pass
+            # try:
+                # self.connection.save(background=True)
+            # except redis.ResponseError:
+                # pass
 
         #@staticmethod
-        #def delete_expired(connection):
-            #for key in connection.keys('*'):
-                #value = connection.get(key)
-                #expires = value.split(':', 2)[1]
-                #if int(expires) < int(time.time()):
-                    #connection.delete(key)
+        # def delete_expired(connection):
+            # for key in connection.keys('*'):
+                # value = connection.get(key)
+                # expires = value.split(':', 2)[1]
+                # if int(expires) < int(time.time()):
+                    # connection.delete(key)
 
 except ImportError:
     pass
@@ -755,15 +886,15 @@ try:
 
         def __init__(self, db, **kwargs):
             super(MongoDBSession, self).__init__(**kwargs)
-            self.db = db # an instance of pymongo.collection.Collection
-            if not kwargs.has_key('session_id'):
+            self.db = db  # an instance of pymongo.collection.Collection
+            if 'session_id' not in kwargs:
                 self.save()
 
         @staticmethod
         def _parse_connection_details(details):
             # mongodb://[host[:port]]/db
             match = re.match('mongodb://([\S|\.]+?)?(?::(\d+))?/(\S+)', details)
-            return match.group(1), match.group(2), match.group(3) # host, port, database
+            return match.group(1), match.group(2), match.group(3)  # host, port, database
 
         def save(self):
             """Upsert a document to the tornado_sessions collection.
@@ -775,11 +906,11 @@ try:
             """
             # upsert
             self.db.update(
-                {'session_id': self.session_id}, # equality criteria
+                {'session_id': self.session_id},  # equality criteria
                 {'session_id': self.session_id,
                  'data': self.serialize(),
                  'expires': int(time.mktime(self.expires.timetuple())),
-                 'user_agent': self.user_agent}, # new document
+                 'user_agent': self.user_agent},  # new document
                 upsert=True)
             self.db.database.connection.end_request()
 
@@ -811,7 +942,6 @@ except ImportError:
     pass
 
 
-
 try:
     import pylibmc
 
@@ -832,7 +962,7 @@ try:
         def __init__(self, connection, **kwargs):
             super(MemcachedSession, self).__init__(**kwargs)
             self.connection = connection
-            if not kwargs.has_key('session_id'):
+            if 'session_id' not in kwargs:
                 self.save()
 
         @staticmethod
@@ -858,7 +988,7 @@ try:
                               self.user_agent))
             # count how long should it last and then add or rewrite
             live_sec = self.expires - datetime.datetime.now()
-            self.connection.set(self.session_id, value, time=live_sec.seconds) 
+            self.connection.set(self.session_id, value, time=live_sec.seconds)
             self.dirty = False
 
         @staticmethod
