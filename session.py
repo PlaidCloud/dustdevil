@@ -713,52 +713,62 @@ class PostgresSession(BaseSession):
         values = []
 
         for b in base_session_fields:
-            query_fields.append(b)
+            query_fields.append('"{0}"'.format(b))
             value_fields.append('%s')
-            update_fields.append('{0}={1}'.format(b, '%s'))
+            update_fields.append('"{0}"={1}'.format(b, '%s'))
             values.append(base_session_fields[b])
 
         # TODO - Need some Postgres expertise on replicating UPSERT functionality
         #        For now, performing key violation handling in python.
-
+        print "------------------START------------------"
         table_name = 'tornado_sessions'
         fields_string = ", ".join(query_fields)
         values_string = ", ".join(value_fields)
         updates_string = ", ".join(update_fields)
 
         insert_query = "INSERT INTO {0} ({1}) VALUES ({2});".format(table_name, fields_string, values_string)
+
         update_query = "UPDATE {0} SET {1} WHERE {0}.session_id='{2}';".format(table_name, updates_string, self.session_id)
+
         cur = self.connection.cursor()
 
         try:
             cur.execute(insert_query, values)
+            print insert_query
         except:
+            print "****** Session Already Exists..."
+            print update_query
             self.connection.rollback()
             cur.execute(update_query, values)
         finally:
             self.connection.commit()
             self.dirty = False
+        print "------------------END------------------"
 
     @staticmethod
     def load(session_id, connection, **kwargs):
         """Load the stored session."""
         try:
-            query = """
-            select session_id, data, expires, ip_address, user_agent
-            from tornado_sessions where session_id = %s;"""
+            query = "SELECT data FROM tornado_sessions WHERE session_id = %s;"
 
-            cur = self.connection.cursor()
-            cur.execute(query, session_id)
+            cur = connection.cursor()
+            cur.execute(query, (session_id,))
 
             data = cur.fetchone()
             if data:
-                stored_kwargs = PostgresSession.deserialize(data['data'])
+                stored_kwargs = PostgresSession.deserialize(data[0])
+
+                # print "Found the following data for session_id {0}:".format(session_id)
+                # print stored_kwargs
+
                 kwargs.update(stored_kwargs)
                 session_object = PostgresSession(connection, **kwargs)
                 # session_object._tornado_web = tornado_web
             # print "Data from query", data
             return session_object
-        except:
+        except Exception as e:
+            # print "EXCEPTION in dustdevil PG Handler: " + str(e)
+            # print "Found no session data for session_id {0}".format(session_id)
             return None
 
     def delete(self):
@@ -767,17 +777,17 @@ class PostgresSession(BaseSession):
         # print(self.session_id)
         cur = self.connection.cursor()
 
-        cur.execute("""
-        delete from tornado_sessions where session_id = %s;""", (self.session_id,))
+        query = "DELETE FROM tornado_sessions where session_id = %s;"
+        cur.execute(query, (self.session_id,))
         self.connection.commit()
 
     @staticmethod
     def delete_expired(connection):
-        cur = self.connection.cursor()
+        cur = connection.cursor()
 
-        cur.execute("""
-        delete from tornado_sessions where expires < %s;""", (int(time.time()),))
-        self.connection.commit()
+        query = "DELETE FROM tornado_sessions WHERE expires < %s;"
+        cur.execute(query, (int(time.time()),))
+        connection.commit()
 
 
 try:
