@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 
 import session
-from tornado import database
+
+try:
+    from tornado import database
+except ImportError:
+    pass
 
 try:
     import psycopg2
