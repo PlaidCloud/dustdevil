@@ -720,7 +720,7 @@ class PostgresSession(BaseSession):
 
         # TODO - Need some Postgres expertise on replicating UPSERT functionality
         #        For now, performing key violation handling in python.
-        print "------------------START------------------"
+        # print "------------------START------------------"
         table_name = 'tornado_sessions'
         fields_string = ", ".join(query_fields)
         values_string = ", ".join(value_fields)
@@ -734,16 +734,16 @@ class PostgresSession(BaseSession):
 
         try:
             cur.execute(insert_query, values)
-            print insert_query
+            # print insert_query
         except:
-            print "****** Session Already Exists..."
-            print update_query
+            # print "****** Session Already Exists..."
+            # print update_query
             self.connection.rollback()
             cur.execute(update_query, values)
         finally:
             self.connection.commit()
             self.dirty = False
-        print "------------------END------------------"
+        # print "------------------END------------------"
 
     @staticmethod
     def load(session_id, connection, **kwargs):
@@ -777,7 +777,7 @@ class PostgresSession(BaseSession):
         # print(self.session_id)
         cur = self.connection.cursor()
 
-        query = "DELETE FROM tornado_sessions where session_id = %s;"
+        query = "DELETE FROM tornado_sessions WHERE session_id = %s;"
         cur.execute(query, (self.session_id,))
         self.connection.commit()
 
