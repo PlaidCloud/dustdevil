@@ -815,9 +815,35 @@ try:
         @staticmethod
         def _parse_connection_details(details):
             # redis://[auth@][host[:port]][/db]
-            match = re.match('redis://(?:(\S+)@)?([^\s:/]+)?(?::(\d+))?(?:/(\d+))?$', details)
-            password, host, port, db = match.groups()
-            return password, host, int(port), int(db)
+            print details
+            if details.startswith('redis://@'):
+                password = None
+                match = re.match('redis://@([\w|\.-]+)(?::(\d+))?/(\S+)', details)
+                username = None
+                hostname = match.group(1) or 'localhost'
+                port = match.group(2) or '6379'
+                database = match.group(3)
+            elif details.startswith('redis:///'):
+                password = None
+                hostname = 'localhost'
+                port = '6379'
+                username = None
+                database = details.replace('redis:///', '')
+            elif details.find('@') != -1:
+                match = re.match('redis://(\w+):(.*?)@([\w|\.-]+)(?::(\d+))?/(\S+)', details)
+                username = match.group(1)
+                password = match.group(2)
+                hostname = match.group(3) or 'localhost'
+                port = match.group(4) or '6379'
+                database = match.group(5)
+            else:
+                hostname = 'localhost'
+                port = '6379'
+                match = re.match('redis://(\w+):(.*?)/(\S+)', details)
+                username = match.group(1)
+                password = match.group(2)
+                database = match.group(3)
+            return username, password, hostname, int(database), int(port)
 
         def save(self):
             """Save the current sesssion to Redis. The session_id
