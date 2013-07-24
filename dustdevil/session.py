@@ -135,6 +135,7 @@ __status__ = "Stable"
 
 
 class BaseSession(collections.MutableMapping):
+
     """The base class for the session object. Work with the session object
     is really simple, just treat is as any other dictionary:
 
@@ -158,6 +159,7 @@ class BaseSession(collections.MutableMapping):
                  regeneration_interval=None, next_regeneration=None, tornado_web=None,
                  cookie_name=None, field_store=None, **kwargs):
         # if session_id is True, we're loading a previously initialized session
+        # print "DUSTDEVIL Initial Duration: {0}".format(duration)
         if session_id:
             self.session_id = session_id
             self.data = data
@@ -171,6 +173,8 @@ class BaseSession(collections.MutableMapping):
             self.expires = self._expires_at()
             self.dirty = True
 
+        # print "DUSTDEVIL Step 2 Duration: {0}".format(self.duration)
+
         self.ip_address = ip_address
         self.user_agent = user_agent
         self.security_model = security_model
@@ -181,6 +185,8 @@ class BaseSession(collections.MutableMapping):
         self._tornado_web = tornado_web
         self._cookie_name = cookie_name
         self._field_store = field_store
+
+        print "DUSTDEVIL Step 3 Duration: {0}".format(self.duration)
 
     def __repr__(self):
         return '<session id: %s data: %s>' % (self.session_id, self.data)
@@ -296,8 +302,8 @@ class BaseSession(collections.MutableMapping):
             self.refresh()  # advance expiry time and save session
             # self._tornado_web.set_secure_cookie(self._cookie_name,
             #                       self.session_id,
-            #                       #expires_days=None,
-            #                       #expires=my_container.session.expires,
+            # expires_days=None,
+            # expires=my_container.session.expires,
             #                       path='/',
             #                       secure=True)
 
@@ -349,6 +355,7 @@ class BaseSession(collections.MutableMapping):
 
 
 class FileSession(BaseSession):
+
     """File based session storage. Sessions are stored in CSV format. The file
     is either specified in the session_storage setting (be sure it is writable
     to the Tornado process) or a new tempfile with 'tornado_sessions_' prefix
@@ -455,6 +462,7 @@ class FileSession(BaseSession):
 
 
 class DirSession(BaseSession):
+
     """A "directory" based session storage. Every session is stored in a
     separate file, so one file represents one session. The files are
     named as the session_id plus '.session' suffix. Data is stored in
@@ -523,6 +531,7 @@ class DirSession(BaseSession):
 
 
 class MySQLSession(BaseSession):
+
     """Enables MySQL to act as a session storage engine. It uses Tornado's
     MySQL wrapper from database.py.
 
@@ -649,6 +658,7 @@ class MySQLSession(BaseSession):
 
 
 class PostgresSession(BaseSession):
+
     """Enables Postgres to act as a session storage engine. It uses Tornado's
     Postgres wrapper from database.py.
 
@@ -728,7 +738,8 @@ class PostgresSession(BaseSession):
 
         insert_query = "INSERT INTO {0} ({1}) VALUES ({2});".format(table_name, fields_string, values_string)
 
-        update_query = "UPDATE {0} SET {1} WHERE {0}.session_id='{2}';".format(table_name, updates_string, self.session_id)
+        update_query = "UPDATE {0} SET {1} WHERE {0}.session_id='{2}';".format(
+            table_name, updates_string, self.session_id)
 
         cur = self.connection.cursor()
 
@@ -794,6 +805,7 @@ try:
     import redis
 
     class RedisSession(BaseSession):
+
         """Class handling session storing in Redis.
 
         It uses default Redis settings for host and port, without
@@ -815,7 +827,7 @@ try:
         @staticmethod
         def _parse_connection_details(details):
             # redis://[auth@][host[:port]][/db]
-            print details
+            # print details
             if details.startswith('redis://@'):
                 password = None
                 match = re.match('redis://@([\w|\.-]+)(?::(\d+))?/(\S+)', details)
@@ -851,20 +863,16 @@ try:
             serialized_data, expires, ip_address and user_agent. This
             function calls BGSAVE on Redis, so it may terminate before
             the data is actually updated on the HDD."""
+
             if not self.dirty:
                 return
-            # expiration should also be redis's job.
+
+            # print "DUSTDEVIL duration: {0}".format(self.duration)
             value = ':'.join((self.serialize(),
                              # str(int(time.mktime(self.expires.timetuple()))),
                              self.ip_address,
                              self.user_agent))
-            self.connection.setex(self.session_id, self.duration.seconds, value)
-            # I don't know why this was here. It should be redis's job to save itself.
-            # Maybe an old version of redis didn't have timed disk backups?
-            # try:
-                # self.connection.save(background=True)
-            # except redis.ResponseError:
-                # pass
+            self.connection.setex(self.session_id, self.duration, value)
             self.dirty = False
 
         @staticmethod
@@ -877,7 +885,8 @@ try:
                         stored_kwargs = RedisSession.deserialize(data.split(':', 1)[0])
                         kwargs.update(stored_kwargs)
                         session_object = RedisSession(connection, **kwargs)
-                        connection.expire(session_id, session_object.duration.seconds)
+                        # print "DUSTDEVIL extracted duration: {0}".format(session_object.duration)
+                        connection.expire(session_id, session_object.duration)
                     return session_object
                 except:
                     return None
@@ -887,18 +896,6 @@ try:
             """Delete the session key-value from Redis. As save(),
             delete() too calls BGSAVE."""
             self.connection.delete(self.session_id)
-            # try:
-                # self.connection.save(background=True)
-            # except redis.ResponseError:
-                # pass
-
-        #@staticmethod
-        # def delete_expired(connection):
-            # for key in connection.keys('*'):
-                # value = connection.get(key)
-                # expires = value.split(':', 2)[1]
-                # if int(expires) < int(time.time()):
-                    # connection.delete(key)
 
 except ImportError:
     pass
@@ -908,6 +905,7 @@ try:
     import pymongo
 
     class MongoDBSession(BaseSession):
+
         """Class implementing the MongoDB based session storage.
         All sessions are stored in a collection "tornado_sessions" in the db
         you specify in the session_storage setting.
@@ -985,6 +983,7 @@ try:
     import pylibmc
 
     class MemcachedSession(BaseSession):
+
         """Class responsible for Memcached stored sessions. It uses the
         pylibmc library because it's fast. It communicates with the
         memcached server through the binary protocol and uses async

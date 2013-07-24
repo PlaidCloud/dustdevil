@@ -28,13 +28,14 @@ __status__ = "Alpha"
 
 
 class Handler(object):
+
     """Dust Devil Main Session Handling Class"""
 
     def __init__(self, settings):
 
         # logger = plogging.get_logger_adapter(__name__, None, None)
         self.__kw = {'security_model': settings.get('session_security_model', []),
-                     'duration': settings.get('session_age', 900),
+                     'duration': settings.get('duration', 900),
                      'regeneration_interval': settings.get('session_regeneration_interval', 240),
                      'catalog': settings.get('session_catalog', 'tornado_sessions'),
                      'cookie_name': settings.get('session_cookie_name', 'session_id'),
@@ -85,10 +86,10 @@ class Handler(object):
             self.__database = redis.StrictRedis(host=host, port=port, db=d, password=p)
         elif url.startswith('dir'):
             self.__container = session.DirSession
-            self.__database = container_url[6:]
+            self.__database = url[6:]
         elif url.startswith('file'):
             self.__container = session.FileSession
-            self.__database = container_url[7:]
+            self.__database = url[7:]
         else:
             return None
 
