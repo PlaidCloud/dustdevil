@@ -154,6 +154,7 @@ class BaseSession(collections.MutableMapping):
     To create a new storage system for the sessions, subclass BaseSession
     and define save(), load() and delete(). For inspiration, check out any
     of the already available classes and documentation to aformentioned functions."""
+
     def __init__(self, session_id=None, data=None, security_model=[], expires=None,
                  duration=None, ip_address=None, user_agent=None, catalog=None,
                  regeneration_interval=None, next_regeneration=None, tornado_web=None,
@@ -186,7 +187,7 @@ class BaseSession(collections.MutableMapping):
         self._cookie_name = cookie_name
         self._field_store = field_store
 
-        print "DUSTDEVIL Step 3 Duration: {0}".format(self.duration)
+        # print "DUSTDEVIL Step 3 Duration: {0}".format(self.duration)
 
     def __repr__(self):
         return '<session id: %s data: %s>' % (self.session_id, self.data)
@@ -364,6 +365,7 @@ class FileSession(BaseSession):
     Be aware that file-based sessions can get really slow with many stored
     session as any action (save, load, delete) has to cycle through the whole
     file. """
+
     def __init__(self, file_path, **kwargs):
         super(FileSession, self).__init__(**kwargs)
         self.file_path = file_path
@@ -468,6 +470,7 @@ class DirSession(BaseSession):
     named as the session_id plus '.session' suffix. Data is stored in
     CSV format. Make sure the directory where the files are stored is
     readable and writtable to the Tornado process."""
+
     def __init__(self, dir_path, **kwargs):
         super(DirSession, self).__init__(**kwargs)
         self.dir_path = dir_path
