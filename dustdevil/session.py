@@ -881,7 +881,7 @@ try:
         @staticmethod
         def load(session_id, connection, **kwargs):
             """Load the stored session."""
-            if connection.exists(session_id) == 1:
+            if session_id and connection.exists(session_id) == 1:
                 try:
                     data = connection.get(session_id)
                     if data:
