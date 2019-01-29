@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import session
+from dustdevil import session
 
 try:
     from tornado import database
@@ -14,6 +14,7 @@ except ImportError:
 
 try:
     import redis
+    from redis.sentinel import Sentinel
 except ImportError:
     pass
 

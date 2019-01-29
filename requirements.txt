@@ -1,0 +1,6 @@
+psycopg2
+pylibmc
+pymongo
+pytest
+redis
+tornado
