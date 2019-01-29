@@ -834,7 +834,7 @@ try:
             if details.startswith('redis://@'):
                 password = None
                 match = re.match('redis://@([\w|\.-]+)(?::(\d+))?/(\S+)', details)
-                username = None
+                groupname = None
                 hostname = match.group(1) or 'localhost'
                 port = match.group(2) or '6379'
                 database = match.group(3)
@@ -842,23 +842,24 @@ try:
                 password = None
                 hostname = 'localhost'
                 port = '6379'
-                username = None
+                groupname = None
                 database = details.replace('redis:///', '')
             elif details.find('@') != -1:
-                match = re.match('redis://(\w+):(.*?)@([\w|\.-]+)(?::(\d+))?/(\S+)', details)
-                username = match.group(1)
+                match = re.match('redis:\/\/(\w+)(.*?)@([\w|\.-]+)(?::(\d+))?\/(\S+)', details)
+                groupname = match.group(1)
                 password = match.group(2)
                 hostname = match.group(3) or 'localhost'
-                port = match.group(4) or '6379'
+                default_port = '26379' if groupname else '6379'
+                port = match.group(4) or default_port
                 database = match.group(5)
             else:
                 hostname = 'localhost'
                 port = '6379'
-                match = re.match('redis://(\w+):(.*?)/(\S+)', details)
-                username = match.group(1)
+                match = re.match('redis:\/\/(\w+):(.*?)/(\S+)', details)
+                groupname = match.group(1)
                 password = match.group(2)
                 database = match.group(3)
-            return username, password, hostname, int(database), int(port)
+            return groupname, password, hostname, int(database), int(port)
 
         def save(self):
             """Save the current sesssion to Redis. The session_id

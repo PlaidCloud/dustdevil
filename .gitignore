@@ -4,3 +4,4 @@
 *.wpr
 *~
 *.log
+.vscode

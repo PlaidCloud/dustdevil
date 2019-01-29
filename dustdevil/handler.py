@@ -82,8 +82,12 @@ class Handler(object):
             self.__database = None  # TODO - Figure out how to open a mongodb session
         elif url.startswith('redis'):
             self.__container = session.RedisSession
-            u, p, host, d, port = self.__container._parse_connection_details(url)
-            self.__database = redis.StrictRedis(host=host, port=port, db=d, password=p)
+            groupname, p, host, d, port = self.__container._parse_connection_details(url)
+            if (groupname):
+                sentinel = redis.sentinel.Sentinel([(host, port)], socket_timeout=0.1)
+                self.__database = sentinel.master_for(groupname)
+            else:
+                self.__database = redis.Redis(host=host, port=port, db=d, password=p)
         elif url.startswith('dir'):
             self.__container = session.DirSession
             self.__database = url[6:]
