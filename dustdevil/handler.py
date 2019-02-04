@@ -45,16 +45,16 @@ class Handler(object):
         url = settings.get('session_storage', '')
 
         if url.startswith('mysql'):
-            self.__container = session.MySQLSession
+            self.storage_class = session.MySQLSession
 
-            u, p, host, d, port = self.__container._parse_connection_details(url)
+            u, p, host, d, port = self.storage_class._parse_connection_details(url)
 
             h = "{0}:{1}".format(host, port)
 
-            self.__database = database.Connection(h, d, user=u, password=p)
+            self.storage_client = database.Connection(h, d, user=u, password=p)
 
-            if not self.__database.get("""show tables like 'tornado_sessions'"""):
-                self.__database.execute(  # create table if it doesn't exist
+            if not self.storage_client.get("""show tables like 'tornado_sessions'"""):
+                self.storage_client.execute(  # create table if it doesn't exist
                     """create table tornado_sessions (
                     session_id varchar(64) not null primary key,
                     data longtext,
@@ -64,37 +64,37 @@ class Handler(object):
                     );""")
 
         elif url.startswith('postgresql'):
-            self.__container = session.PostgresSession
+            self.storage_class = session.PostgresSession
 
-            u, p, host, d, port = self.__container._parse_connection_details(url)
+            u, p, host, d, port = self.storage_class._parse_connection_details(url)
             # print "User: {0}".format(u)
             # print "Host {0}".format(host)
             # print "Database {0}".format(d)
 
-            self.__database = psycopg2.connect(host=host, port=port, database=d, user=u, password=p)
+            self.storage_client = psycopg2.connect(host=host, port=port, database=d, user=u, password=p)
 
         elif url.startswith('sqlite'):
             raise NotImplementedError
         elif url.startswith('memcached'):
-            self.__container = session.MemcachedSession
-            self.__database = None  # TODO - Figure out how to open a memcached session
+            self.storage_class = session.MemcachedSession
+            self.storage_client = None  # TODO - Figure out how to open a memcached session
         elif url.startswith('mongodb'):
-            self.__container = session.MongoDBSession
-            self.__database = None  # TODO - Figure out how to open a mongodb session
+            self.storage_class = session.MongoDBSession
+            self.storage_client = None  # TODO - Figure out how to open a mongodb session
         elif url.startswith('redis'):
-            self.__container = session.RedisSession
-            groupname, p, host, d, port = self.__container._parse_connection_details(url)
+            self.storage_class = session.RedisSession
+            groupname, p, host, d, port = self.storage_class._parse_connection_details(url)
             if (groupname):
                 sentinel = redis.sentinel.Sentinel([(host, port)], socket_timeout=0.1)
-                self.__database = sentinel.master_for(groupname)
+                self.storage_client = sentinel.master_for(groupname)
             else:
-                self.__database = redis.Redis(host=host, port=port, db=d, password=p)
+                self.storage_client = redis.Redis(host=host, port=port, db=d, password=p)
         elif url.startswith('dir'):
-            self.__container = session.DirSession
-            self.__database = url[6:]
+            self.storage_class = session.DirSession
+            self.storage_client = url[6:]
         elif url.startswith('file'):
-            self.__container = session.FileSession
-            self.__database = url[7:]
+            self.storage_class = session.FileSession
+            self.storage_client = url[7:]
         else:
             return None
 
@@ -123,10 +123,10 @@ class Handler(object):
               'field_store': self.__kw['field_store']
               }
 
-        old_session = self.__container.load(session_id, self.__database, **kw)
+        old_session = self.storage_class.load(session_id, self.storage_client, **kw)
 
         if old_session is None or old_session._is_expired():  # create a new session
-            new_session = self.__container(self.__database, **kw)
+            new_session = self.storage_class(self.storage_client, **kw)
 
         if old_session is not None:
             if old_session._should_regenerate():

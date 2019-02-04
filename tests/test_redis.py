@@ -1,39 +1,42 @@
 # pylint: disable=redefined-outer-name
 import pytest
-import redis
+from redis.sentinel import Sentinel
+from tornado import web
 from dustdevil import handler
 
 # @pytest.fixture
 # def client():
 #     pass
 
+# TODO: This should probably be driven by config.
+TEST_SETTINGS = {
+    # session_storage is the redis connection string to test.
+    'session_storage': 'redis://mymaster@redis-ha/0',
+    'security_model': [],
+    'duration': int(60 * 60 * 24),  # 24 Hours
+    'session_age': int(60 * 60 * 24),  # 24 Hours
+    'ip_address': '127.0.0.1',
+    'user_agent': 'SuperCoolBrowser/v1',
+    'tornado_web': None,
+    'regeneration_interval': 60 * 60 * 24 * 365,  # 1 Year,
+    'catalog': 'tornado_sessions',
+    'cookie_name': 'some_session',
+    'field_store': {
+        'UserID': 'USER_ID',
+        'GroupName': 'GROUP_NAME',
+        'UserName': 'USER_NAME',
+        'UserFullName': 'NAME'
+    },
+}
+
 def test_sentinel(capsys):
-    # Use this to print output stdout *during* tests.
-    # with capsys.disabled():
-    #     pass
+    session_handler = handler.Handler(TEST_SETTINGS)
 
-    DUST_DEVIL_SETTINGS = {
-        # Because this module is structured different from some other handler
-        # modules, we can't get the Plaid config from the Tornado settings right
-        # here. We can, however, use cockpit.core.config directly.
-        'session_storage': 'redis://plaid@redis-redis-ha/0',
-        'session_catalog': 'tornado_sessions',
-        'session_cookie_name': 'plaidcloud_session',
-        'session_regeneration_interval': 60 * 60 * 24 * 365,  # 1 Year
-        'duration': int(60 * 60 * 24),  # 24 hours
-        'session_field_store': {
-            'UserID': 'USER_ID',
-            'PlaidGroup': 'PLAID_GROUP',
-            'UserName': 'USER_NAME',
-            'UserFullName': 'NAME'
-        },
-    }
+    session = session_handler.storage_class.load(
+        'something', session_handler.storage_client, **TEST_SETTINGS)
 
-    handle = handler.Handler(DUST_DEVIL_SETTINGS)
-    print(handle)
-    assert handle
-    # sessionx = dust_devil.create_session(self, 'test-session')
-    # print(self.sessionx.dump_dict)
+    with capsys.disabled():
+        print(session)
 
     # user_id = self.session.get('USER_ID', 'Unknown')
     # client_ip = self.request.headers.get('X-Real-Ip', 'Unknown')
