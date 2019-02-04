@@ -1,13 +1,23 @@
 #!/usr/bin/env python
-
-from distutils.core import setup
-from dustdevil.handler import __version__
+from setuptools import setup, find_packages
 
 setup(
     name='dustdevil',
-    version=__version__,
-    description='Lightweight session management class for python',
+    install_requires=[
+        'psycopg2',
+        'pylibmc',
+        'pymongo',
+        'redis',
+        'tornado',
+    ],
+    version="0.1.1",
+    packages=find_packages(),
     author='Tartan Solutions, Inc',
+    author_email='paul.morel@tartansolutions.com',
+    description='Lightweight session management class for python',
     url='https://www.plaidcloud.com',
-    packages=['dustdevil']
+    keywords="python tornado session",
+    project_urls={
+        "Source Code": "https://github.com/PlaidCloud/dustdevil/tree/master",
+    }
 )

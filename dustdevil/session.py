@@ -118,7 +118,7 @@ import csv
 import collections
 import datetime
 import os
-import cPickle as pickle
+import pickle
 import re
 import tempfile
 import time
@@ -554,7 +554,7 @@ class MySQLSession(BaseSession):
         # mysql://username:password[@hostname[:port]]/db
 
         if details.find('@') != -1:
-            match = re.match('mysql://(\w+):(.*?)@([\w|\.-]+)(?::(\d+))?/(\S+)', details)
+            match = re.match(r'mysql://(\w+):(.*?)@([\w|\.-]+)(?::(\d+))?/(\S+)', details)
             username = match.group(1)
             password = match.group(2)
             hostname = match.group(3)
@@ -563,7 +563,7 @@ class MySQLSession(BaseSession):
             host_port = hostname + ':' + port
         else:  # hostname and port not specified
             host_port = 'localhost:3306'
-            match = re.match('mysql://(\w+):(.*?)/(\S+)', details)
+            match = re.match(r'mysql://(\w+):(.*?)/(\S+)', details)
             username = match.group(1)
             password = match.group(2)
             database = match.group(3)
@@ -681,7 +681,7 @@ class PostgresSession(BaseSession):
         # mysql://username:password[@hostname[:port]]/db
 
         if details.find('@') != -1:
-            match = re.match('postgresql://(\w+):(.*?)@([\w|\.-]+)(?::(\d+))?/(\S+)', details)
+            match = re.match(r'postgresql://(\w+):(.*?)@([\w|\.-]+)(?::(\d+))?/(\S+)', details)
             username = match.group(1)
             password = match.group(2)
             hostname = match.group(3) or 'localhost'
@@ -690,7 +690,7 @@ class PostgresSession(BaseSession):
             host_port = hostname + ':' + port
         else:  # hostname and port not specified
             host_port = 'localhost:5432'
-            match = re.match('postgresql://(\w+):(.*?)/(\S+)', details)
+            match = re.match(r'postgresql://(\w+):(.*?)/(\S+)', details)
             username = match.group(1)
             password = match.group(2)
             database = match.group(3)
@@ -831,34 +831,21 @@ try:
         def _parse_connection_details(details):
             # redis://[auth@][host[:port]][/db]
             # print details
-            if details.startswith('redis://@'):
-                password = None
-                match = re.match('redis://@([\w|\.-]+)(?::(\d+))?/(\S+)', details)
-                username = None
-                hostname = match.group(1) or 'localhost'
-                port = match.group(2) or '6379'
-                database = match.group(3)
-            elif details.startswith('redis:///'):
-                password = None
-                hostname = 'localhost'
-                port = '6379'
-                username = None
-                database = details.replace('redis:///', '')
-            elif details.find('@') != -1:
-                match = re.match('redis://(\w+):(.*?)@([\w|\.-]+)(?::(\d+))?/(\S+)', details)
-                username = match.group(1)
-                password = match.group(2)
-                hostname = match.group(3) or 'localhost'
-                port = match.group(4) or '6379'
-                database = match.group(5)
-            else:
-                hostname = 'localhost'
-                port = '6379'
-                match = re.match('redis://(\w+):(.*?)/(\S+)', details)
-                username = match.group(1)
-                password = match.group(2)
-                database = match.group(3)
-            return username, password, hostname, int(database), int(port)
+            match = re.match(r'^redis:\/\/(.*)@([\w|\.-]+)(?::(\d+))?\/(\S+)$', details)
+            groupname = match.group(1)
+            password = None
+            # If password specified, match will be part of groupname
+            # group. Delimiter will be ':', so we'll split on first
+            # occurrence (since passwords could also include a ':').
+            if groupname.find(':') > -1:
+                password = groupname[groupname.find(':')+1:]
+                groupname = groupname[:groupname.find(':')]
+            hostname = match.group(2) or 'localhost'
+            default_port = '26379' if groupname else '6379'
+            port = match.group(3) or default_port
+            database = match.group(4)
+  
+            return groupname, password, hostname, int(database), int(port)
 
         def save(self):
             """Save the current sesssion to Redis. The session_id
@@ -933,7 +920,7 @@ try:
         @staticmethod
         def _parse_connection_details(details):
             # mongodb://[host[:port]]/db
-            match = re.match('mongodb://([\S|\.]+?)?(?::(\d+))?/(\S+)', details)
+            match = re.match(r'mongodb://([\S|\.]+?)?(?::(\d+))?/(\S+)', details)
             return match.group(1), match.group(2), match.group(3)  # host, port, database
 
         def save(self):
@@ -1009,7 +996,7 @@ try:
         @staticmethod
         def _parse_connection_details(details):
             if len(details) > 12:
-                return re.sub('\s+', '', details[12:]).split(',')
+                return re.sub(r'\s+', '', details[12:]).split(',')
             else:
                 return ['127.0.0.1']
 

@@ -37,6 +37,7 @@ Unit testing is in development.  Current tests are localized to each class.
 * Michael Rea
 * Dan Hummon
 * Brian McFadden
+* Garrett Bates
 * Milan Cermak (Original session.py for a fork of Tornado)
 
 
@@ -45,4 +46,4 @@ Unit testing is in development.  Current tests are localized to each class.
 Dust Devil is licensed under the Apache Licence, Version 2.0 to remain consistent
 with the main Tornado project (http://www.apache.org/licenses/LICENSE-2.0.html).
 
-[issues]: http://github.com/inviscid/dust-devil/issues
+[issues]: http://github.com/PlaidCloud/dust-devil/issues

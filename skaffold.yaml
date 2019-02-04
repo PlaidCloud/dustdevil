@@ -1,0 +1,14 @@
+apiVersion: skaffold/v1beta3
+kind: Config
+build:
+  artifacts:
+  - image: plaidcloud/dustdevil
+    sync:
+      '*.py': .
+  tagPolicy:
+    envTemplate:
+      template: "plaidcloud/dustdevil:dev"
+deploy:
+  kubectl:
+    manifests:
+    - kubernetes/*.yaml
