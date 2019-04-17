@@ -43,6 +43,7 @@ class Handler(object):
                      'field_store': settings.get('session_field_store')
                      }
         url = settings.get('session_storage', '')
+        connection_timeout = settings.get('connection_timeout', 1)
 
         if url.startswith('mysql'):
             self.storage_class = session.MySQLSession
@@ -85,7 +86,7 @@ class Handler(object):
             self.storage_class = session.RedisSession
             groupname, p, host, d, port = self.storage_class._parse_connection_details(url)
             if (groupname):
-                sentinel = redis.sentinel.Sentinel([(host, port)], socket_timeout=0.1)
+                sentinel = redis.sentinel.Sentinel([(host, port)], socket_timeout=connection_timeout)
                 self.storage_client = sentinel.master_for(groupname)
             else:
                 self.storage_client = redis.Redis(host=host, port=port, db=d, password=p)
