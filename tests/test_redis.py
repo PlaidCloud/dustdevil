@@ -21,6 +21,7 @@ TEST_SETTINGS = {
     'regeneration_interval': 60 * 60 * 24 * 365,  # 1 Year,
     'catalog': 'tornado_sessions',
     'cookie_name': 'some_session',
+    'connection_timeout': 10,
     'field_store': {
         'UserID': 'USER_ID',
         'GroupName': 'GROUP_NAME',
