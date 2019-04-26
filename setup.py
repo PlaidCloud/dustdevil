@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 setup(
     name='dustdevil',
     install_requires=[
-        'psycopg2',
+        'psycopg2-binary',
         'pylibmc',
         'pymongo',
         'redis',
