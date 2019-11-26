@@ -218,7 +218,7 @@ class BaseSession(collections.MutableMapping):
         return len(list(self.data.keys()))
 
     @staticmethod
-    def _generate_session_id(cls):
+    def _generate_session_id():
         return codecs.encode(os.urandom(32), 'hex')  # 256 bits of entropy
 
     def _is_expired(self):
