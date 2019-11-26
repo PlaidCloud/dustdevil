@@ -30,6 +30,7 @@ TEST_SETTINGS = {
     },
 }
 
+@pytest.mark.skip(reason="Currently cannot test this as there is no mymaster redis")
 def test_sentinel(capsys):
     session_handler = handler.Handler(TEST_SETTINGS)
 
