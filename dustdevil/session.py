@@ -217,6 +217,7 @@ class BaseSession(collections.MutableMapping):
     def __len__(self):
         return len(list(self.data.keys()))
 
+    @staticmethod
     def _generate_session_id(cls):
         return codecs.encode(os.urandom(32), 'hex')  # 256 bits of entropy
 
@@ -1038,6 +1039,7 @@ try:
             """Delete the session from storage."""
             self.connection.delete(self.session_id)
 
+        @staticmethod
         def delete_expired(connection):
             """With Memcached as session storage, this function does
             not make sense as all keys are saved with expiry time
