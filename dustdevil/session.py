@@ -112,6 +112,7 @@ session_security_model: not implemented yet;
                         users IP address, User-Agent, GeoIP or whatever
                         other data; suggestions welcomed
 """
+from __future__ import absolute_import
 
 import base64
 import csv
@@ -122,7 +123,8 @@ import pickle
 import re
 import tempfile
 import time
-import types
+import six
+import codecs
 
 __author__ = "Milan Cermak"
 __copyright__ = "Copyright 2009 Milan Cermak"
@@ -207,16 +209,16 @@ class BaseSession(collections.MutableMapping):
         self.dirty = True
 
     def keys(self):
-        return self.data.keys()
+        return list(self.data.keys())
 
     def __iter__(self):
         return self.data.__iter__()
 
     def __len__(self):
-        return len(self.data.keys())
+        return len(list(self.data.keys()))
 
     def _generate_session_id(cls):
-        return os.urandom(32).encode('hex')  # 256 bits of entropy
+        return codecs.encode(os.urandom(32), 'hex')  # 256 bits of entropy
 
     def _is_expired(self):
         """Check if the session has expired."""
@@ -227,9 +229,9 @@ class BaseSession(collections.MutableMapping):
         v = self.duration
         if isinstance(v, datetime.timedelta):
             pass
-        elif isinstance(v, (int, long)):
+        elif isinstance(v, six.integer_types):
             self.duration = datetime.timedelta(seconds=v)
-        elif isinstance(v, basestring):
+        elif isinstance(v, six.string_types):
             self.duration = datetime.timedelta(seconds=int(v))
         else:
             self.duration = datetime.timedelta(seconds=900)  # 15 mins
@@ -253,9 +255,9 @@ class BaseSession(collections.MutableMapping):
         v = self.regeneration_interval
         if isinstance(v, datetime.timedelta):
             pass
-        elif isinstance(v, (int, long)):
+        elif isinstance(v, six.integer_types):
             self.regeneration_interval = datetime.timedelta(seconds=v)
-        elif isinstance(v, basestring):
+        elif isinstance(v, six.string_types):
             self.regeneration_interval = datetime.timedelta(seconds=int(v))
         else:
             self.regeneration_interval = datetime.timedelta(seconds=240)  # 4 mins
@@ -505,7 +507,7 @@ class DirSession(BaseSession):
             if os.path.isfile(session_file_name):
                 session_file = open(session_file_name, 'rb')
                 reader = csv.reader(session_file)
-                l = reader.next()
+                l = next(reader)
                 kwargs = DirSession.deserialize(l[1])
                 return DirSession(directory, **kwargs)
             return None
@@ -522,12 +524,12 @@ class DirSession(BaseSession):
     def delete_expired(dir_path):
         assert os.path.isdir(dir_path)
         all_files = os.listdir(dir_path)
-        session_files = filter(lambda x: x.endswith('.session'), all_files)
+        session_files = [x for x in all_files if x.endswith('.session')]
         for s in session_files:
             name = os.path.join(dir_path, s)
             session_file = open(name, 'rb')
             reader = csv.reader(session_file)
-            data = reader.next()
+            data = next(reader)
             session_file.close()
             if int(data[2]) < int(time.time()):
                 os.remove(name)
@@ -844,7 +846,7 @@ try:
             default_port = '26379' if groupname else '6379'
             port = match.group(3) or default_port
             database = match.group(4)
-  
+
             return groupname, password, hostname, int(database), int(port)
 
         def save(self):
