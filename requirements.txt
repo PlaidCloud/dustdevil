@@ -1,6 +1,5 @@
 psycopg2-binary
 pylibmc
 pymongo
-pytest
 redis
 tornado
