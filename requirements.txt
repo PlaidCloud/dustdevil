@@ -3,3 +3,5 @@ pylibmc
 pymongo
 redis
 tornado
+pytest
+pytest-cov
