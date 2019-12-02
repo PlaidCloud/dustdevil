@@ -1,6 +1,7 @@
-psycopg2
+psycopg2-binary
 pylibmc
 pymongo
-pytest
 redis
 tornado
+pytest
+pytest-cov

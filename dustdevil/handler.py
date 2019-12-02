@@ -1,22 +1,25 @@
 #!/usr/bin/env python
 
-from dustdevil import session
+from __future__ import absolute_import
 
 try:
     from tornado import database
 except ImportError:
-    pass
+    database = None
 
 try:
     import psycopg2
 except ImportError:
-    pass
+    psycopg2 = None
 
 try:
     import redis
     from redis.sentinel import Sentinel
 except ImportError:
-    pass
+    redis = None
+    Sentinel = None
+
+from dustdevil import session
 
 __author__ = "Paul Morel"
 __copyright__ = "Copyright 2019 Tartan Solutions, Inc"
@@ -46,6 +49,8 @@ class Handler(object):
         connection_timeout = settings.get('connection_timeout', 1)
 
         if url.startswith('mysql'):
+            if database is None:
+                raise Exception('MySQL no longer supported - was implemented with a VERY old version of tornado')
             self.storage_class = session.MySQLSession
 
             u, p, host, d, port = self.storage_class._parse_connection_details(url)
@@ -65,6 +70,8 @@ class Handler(object):
                     );""")
 
         elif url.startswith('postgresql'):
+            if psycopg2 is None:
+                raise Exception('Postgres not supported, missing the psycopg2 Python package')
             self.storage_class = session.PostgresSession
 
             u, p, host, d, port = self.storage_class._parse_connection_details(url)
@@ -83,6 +90,8 @@ class Handler(object):
             self.storage_class = session.MongoDBSession
             self.storage_client = None  # TODO - Figure out how to open a mongodb session
         elif url.startswith('redis'):
+            if redis is None:
+                raise Exception('Redis not supported, missing the redis Python package')
             self.storage_class = session.RedisSession
             groupname, p, host, d, port = self.storage_class._parse_connection_details(url)
             if (groupname):
@@ -97,7 +106,7 @@ class Handler(object):
             self.storage_class = session.FileSession
             self.storage_client = url[7:]
         else:
-            return None
+            return
 
     def create_session(self, tornado_web, session_id=None):
         """Creates a session handler connection to the persistent storage container
@@ -124,7 +133,7 @@ class Handler(object):
               'field_store': self.__kw['field_store']
               }
 
-        old_session = self.storage_class.load(session_id, self.storage_client, **kw)
+        old_session = self.storage_class.load(session_id, self.storage_client)
 
         if old_session is None or old_session._is_expired():  # create a new session
             new_session = self.storage_class(self.storage_client, **kw)
