@@ -219,7 +219,7 @@ class BaseSession(collections.MutableMapping):
 
     @staticmethod
     def _generate_session_id():
-        return codecs.encode(os.urandom(32), 'hex')  # 256 bits of entropy
+        return codecs.encode(os.urandom(32), 'hex').decode('ascii')  # 256 bits of entropy
 
     def _is_expired(self):
         """Check if the session has expired."""
@@ -336,11 +336,11 @@ class BaseSession(collections.MutableMapping):
                 'security_model': self.security_model,
                 'regeneration_interval': self.regeneration_interval,
                 'next_regeneration': self.next_regeneration}
-        return base64.encodestring(pickle.dumps(dump))
+        return base64.b64encode(pickle.dumps(dump)).decode('ascii')
 
     @staticmethod
     def deserialize(datastring):
-        return pickle.loads(base64.decodestring(datastring))
+        return pickle.loads(base64.b64decode(datastring))
 
     def dump_dict(self):
         """Returns a copy, not the reference, of this session's data."""
@@ -873,14 +873,15 @@ try:
             """Load the stored session."""
             if session_id and connection.exists(session_id) == 1:
                 try:
-                    data = connection.get(session_id)
+                    data = connection.get(session_id).decode()
                     if data:
                         stored_kwargs = RedisSession.deserialize(data.split(':', 1)[0])
                         kwargs.update(stored_kwargs)
                         session_object = RedisSession(connection, **kwargs)
                         # print "DUSTDEVIL extracted duration: {0}".format(session_object.duration)
                         connection.expire(session_id, session_object.duration)
-                    return session_object
+
+                        return session_object
                 except:
                     return None
             return None
