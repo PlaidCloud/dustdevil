@@ -2,7 +2,7 @@
 
 image_name = "plaidcloud/dustdevil"
 
-podTemplate(label: 'io',
+podTemplate(label: 'dustdevil',
   containers: [
     containerTemplate(name: 'docker', image: 'docker:18.09.9-git', ttyEnabled: true, command: 'cat'),
     containerTemplate(name: 'kubectl', image: "lachlanevenson/k8s-kubectl:v1.13.5", ttyEnabled: true, command: 'cat')
@@ -10,7 +10,7 @@ podTemplate(label: 'io',
   serviceAccount: 'jenkins'
 )
 {
-  node(label: 'io') {
+  node(label: 'dustdevil') {
     properties([
       parameters([
         booleanParam(name: 'no_cache', defaultValue: false, description: 'Adds --no-cache flag to docker build command(s).'),
