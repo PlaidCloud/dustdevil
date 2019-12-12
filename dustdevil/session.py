@@ -312,7 +312,7 @@ class BaseSession(collections.MutableMapping):
             #                       secure=True)
 
     @staticmethod
-    def load(session_id, location):
+    def load(session_id, location, **kwargs):
         """Load the stored session from storage backend or return
         None if the session was not found, in case of stale cookie."""
         pass
@@ -414,7 +414,7 @@ class FileSession(BaseSession):
         self.dirty = False
 
     @staticmethod
-    def load(session_id, path):
+    def load(session_id, path, **kwargs):
         """Loads a session from the specified file."""
         try:
             reader_file = open(path, 'rb')
@@ -501,7 +501,7 @@ class DirSession(BaseSession):
         self.dirty = False
 
     @staticmethod
-    def load(session_id, directory):
+    def load(session_id, directory, **kwargs):
         """Load session from file storage."""
         try:
             session_file_name = os.path.join(directory, session_id + '.session')
@@ -946,7 +946,7 @@ try:
             self.db.database.connection.end_request()
 
         @staticmethod
-        def load(session_id, db):
+        def load(session_id, db, **kwargs):
             """Load session from the storage."""
             try:
                 data = db.find_one({'session_id': session_id})
@@ -1024,7 +1024,7 @@ try:
             self.dirty = False
 
         @staticmethod
-        def load(session_id, connection):
+        def load(session_id, connection, **kwargs):
             """Load the session from storage."""
             try:
                 value = connection.get(session_id)

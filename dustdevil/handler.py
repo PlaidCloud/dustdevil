@@ -133,7 +133,7 @@ class Handler(object):
               'field_store': self.__kw['field_store']
               }
 
-        old_session = self.storage_class.load(session_id, self.storage_client)
+        old_session = self.storage_class.load(session_id, self.storage_client, **kw)
 
         if old_session is None or old_session._is_expired():  # create a new session
             new_session = self.storage_class(self.storage_client, **kw)
