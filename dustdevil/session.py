@@ -168,7 +168,7 @@ class BaseSession(collections.MutableMapping):
             self.data = data
             self.duration = duration
             self.expires = expires
-            self.dirty = False
+            self.dirty = True
         else:
             self.session_id = self._generate_session_id()
             self.data = {}
@@ -827,7 +827,7 @@ try:
         def __init__(self, connection, **kwargs):
             super(RedisSession, self).__init__(**kwargs)
             self.connection = connection
-            if 'session_id' not in kwargs:
+            if self.dirty:
                 self.save()
 
         @staticmethod
