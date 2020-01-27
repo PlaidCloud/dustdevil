@@ -136,6 +136,8 @@ class Handler(object):
         old_session = self.storage_class.load(session_id, self.storage_client, **kw)
 
         if old_session is None or old_session._is_expired():  # create a new session
+            kw['session_id'] = session_id
+            kw['data'] = {}
             new_session = self.storage_class(self.storage_client, **kw)
 
         if old_session is not None:
