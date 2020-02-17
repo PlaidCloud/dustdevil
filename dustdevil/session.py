@@ -223,6 +223,8 @@ class BaseSession(collections.MutableMapping):
 
     def _is_expired(self):
         """Check if the session has expired."""
+        if not self.expires:
+            return True
         return datetime.datetime.now() > self.expires
 
     def _expires_at(self):
