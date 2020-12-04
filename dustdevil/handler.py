@@ -25,10 +25,8 @@ __author__ = "Paul Morel"
 __copyright__ = "Copyright 2019 Tartan Solutions, Inc"
 __credits__ = ["Paul Morel", "Brian McFadden", "Garrett Bates"]
 __license__ = "Apache 2.0"
-__version__ = "1.1.0"
 __maintainer__ = "Paul Morel"
 __email__ = "paul.morel@tartansolutions.com"
-__status__ = "Alpha"
 
 
 class Handler(object):

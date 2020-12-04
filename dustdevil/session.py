@@ -4,7 +4,7 @@
 Sessions module for the Tornado framework.
 
 This module implements sessions for Tornado. It can store
-session data in files or MySQL databse, Memcached, Redis
+session data in files or MySQL database, Memcached, Redis
 and MongoDB.
 
 USAGE:
@@ -130,10 +130,8 @@ __author__ = "Milan Cermak"
 __copyright__ = "Copyright 2009 Milan Cermak"
 __credits__ = ["Milan Cermak", "Paul Morel"]
 __license__ = "Apache 2.0"
-__version__ = "1.0"
 __maintainer__ = "Paul Morel"
 __email__ = "paul.morel@tartansolutions.com"
-__status__ = "Stable"
 
 
 class BaseSession(collections.MutableMapping):
@@ -151,11 +149,11 @@ class BaseSession(collections.MutableMapping):
     regenerated periodically.
 
     The session_id attribute stores a unique, random, 64 characters long
-    string serving as an indentifier.
+    string serving as an identifier.
 
     To create a new storage system for the sessions, subclass BaseSession
     and define save(), load() and delete(). For inspiration, check out any
-    of the already available classes and documentation to aformentioned functions."""
+    of the already available classes and documentation to aforementioned functions."""
 
     def __init__(self, session_id=None, data=None, security_model=[], expires=None,
                  duration=None, ip_address=None, user_agent=None, catalog=None,
