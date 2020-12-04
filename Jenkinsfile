@@ -1,4 +1,5 @@
 #!/usr/bin/env groovy
+import groovy.transform.Field
 
 @Field 
 def image_name = "gcr.io/plaidcloud-build/flashback-service"
