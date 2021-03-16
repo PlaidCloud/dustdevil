@@ -1,7 +1,0 @@
-psycopg2-binary
-pylibmc
-pymongo
-redis
-tornado
-pytest
-pytest-cov
