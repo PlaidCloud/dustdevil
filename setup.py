@@ -22,7 +22,8 @@ mongo_deps = [
 ]
 
 all_deps = tornado_deps + postgres_deps + redis_deps + memcached_deps + mongo_deps
-test_deps = all_deps + [
+# test_deps = all_deps + [ ## only tests for redis so far
+test_deps = redis_deps + [
     'pytest',
     'pytest-cov',
     'pytest-runner',
