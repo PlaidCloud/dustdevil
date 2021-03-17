@@ -123,7 +123,6 @@ import pickle
 import re
 import tempfile
 import time
-import six
 import codecs
 
 __author__ = "Milan Cermak"
@@ -230,9 +229,9 @@ class BaseSession(collections.MutableMapping):
         v = self.duration
         if isinstance(v, datetime.timedelta):
             pass
-        elif isinstance(v, six.integer_types):
+        elif isinstance(v, int):
             self.duration = datetime.timedelta(seconds=v)
-        elif isinstance(v, six.string_types):
+        elif isinstance(v, str):
             self.duration = datetime.timedelta(seconds=int(v))
         else:
             self.duration = datetime.timedelta(seconds=900)  # 15 mins
@@ -256,9 +255,9 @@ class BaseSession(collections.MutableMapping):
         v = self.regeneration_interval
         if isinstance(v, datetime.timedelta):
             pass
-        elif isinstance(v, six.integer_types):
+        elif isinstance(v, int):
             self.regeneration_interval = datetime.timedelta(seconds=v)
-        elif isinstance(v, six.string_types):
+        elif isinstance(v, str):
             self.regeneration_interval = datetime.timedelta(seconds=int(v))
         else:
             self.regeneration_interval = datetime.timedelta(seconds=240)  # 4 mins
