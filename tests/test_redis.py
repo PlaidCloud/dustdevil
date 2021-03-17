@@ -1,7 +1,6 @@
 # pylint: disable=redefined-outer-name
 import pytest
 from redis.sentinel import Sentinel
-from tornado import web
 from dustdevil import handler
 
 # @pytest.fixture
@@ -29,6 +28,7 @@ TEST_SETTINGS = {
         'UserFullName': 'NAME'
     },
 }
+
 
 @pytest.mark.skip(reason="Currently cannot test this as there is no mymaster redis")
 def test_sentinel(capsys):
