@@ -1,4 +1,4 @@
-FROM python:3.7-slim
+FROM python:3.9-slim
 RUN apt-get update && apt-get install -y git gcc libhdf5-dev locales && echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen && locale-gen
 COPY requirements.txt ./
 RUN pip install --upgrade pip setuptools \
