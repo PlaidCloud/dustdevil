@@ -124,6 +124,7 @@ import re
 import tempfile
 import time
 import codecs
+from plaidcloud.config import redis as rcfg
 
 __author__ = "Milan Cermak"
 __copyright__ = "Copyright 2009 Milan Cermak"
@@ -831,23 +832,9 @@ try:
 
         @staticmethod
         def _parse_connection_details(details):
-            # redis://[auth@][host[:port]][/db]
-            # print details
-            match = re.match(r'^redis:\/\/(.*)@([\w|\.-]+)(?::(\d+))?\/(\S+)$', details)
-            groupname = match.group(1)
-            password = None
-            # If password specified, match will be part of groupname
-            # group. Delimiter will be ':', so we'll split on first
-            # occurrence (since passwords could also include a ':').
-            if groupname.find(':') > -1:
-                password = groupname[groupname.find(':')+1:]
-                groupname = groupname[:groupname.find(':')]
-            hostname = match.group(2) or 'localhost'
-            default_port = '26379' if groupname else '6379'
-            port = match.group(3) or default_port
-            database = match.group(4)
-
-            return groupname, password, hostname, int(database), int(port)
+            conn_info = rcfg.RedisConfig({}).parse_url(details)
+            host, port = conn_info.hosts[0]
+            return conn_info.service_name, conn_info.password, host, conn_info.database, port
 
         def save(self):
             """Save the current sesssion to Redis. The session_id

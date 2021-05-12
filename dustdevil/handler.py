@@ -91,10 +91,10 @@ class Handler(object):
             if redis is None:
                 raise Exception('Redis not supported, missing the redis Python package')
             self.storage_class = session.RedisSession
-            groupname, p, host, d, port = self.storage_class._parse_connection_details(url)
-            if (groupname):
+            service_name, p, host, d, port = self.storage_class._parse_connection_details(url)
+            if (service_name):
                 sentinel = redis.sentinel.Sentinel([(host, port)], socket_timeout=connection_timeout)
-                self.storage_client = sentinel.master_for(groupname)
+                self.storage_client = sentinel.master_for(service_name)
             else:
                 self.storage_client = redis.Redis(host=host, port=port, db=d, password=p)
         elif url.startswith('dir'):
