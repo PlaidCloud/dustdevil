@@ -11,6 +11,7 @@ postgres_deps = [
 
 redis_deps = [
     'redis',
+    'plaidcloud-config==0.1.8',
 ]
 
 memcached_deps = [
