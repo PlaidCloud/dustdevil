@@ -87,7 +87,7 @@ class Handler(object):
         elif url.startswith('mongodb'):
             self.storage_class = session.MongoDBSession
             self.storage_client = None  # TODO - Figure out how to open a mongodb session
-        elif url.startswith('redis'):
+        elif url.startswith('redis') or url.startswith('sentinel'):
             if redis is None:
                 raise Exception('Redis not supported, missing the redis Python package')
             self.storage_class = session.RedisSession
